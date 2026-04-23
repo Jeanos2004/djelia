@@ -19,8 +19,11 @@ export const StoryCard = ({ story, onPress }: Props) => {
       {/* Bordure artisanale à gauche */}
       <View style={styles.accentBorder} />
       
-      <View style={styles.imageContainer}>
-        <Image source={{ uri: story.imageUrl }} style={styles.image} />
+      <View style={[styles.imageContainer, { backgroundColor: colors.surfaceWarm }]}>
+        <Image 
+          source={{ uri: story.imageUrl }} 
+          style={styles.image} 
+        />
         <TouchableOpacity 
           style={styles.favoriteButton} 
           onPress={() => toggleFavorite(story.id)}

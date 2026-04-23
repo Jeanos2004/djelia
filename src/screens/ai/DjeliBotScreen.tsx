@@ -17,10 +17,11 @@ export const DjeliBotScreen = ({ route }: any) => {
   
   const [messages, setMessages] = useState<Message[]>([{
     id: '1',
-    text: `N'ba di ${user?.name || 'cher ami'} ! Je suis DjeliBot. Mon savoir puise dans les racines de notre terre. Que souhaites-tu explorer aujourd'hui ?`,
+    text: `N'ba di ${user?.name || 'cher ami'} ! Entre dans le cercle de la parole. Je suis DjeliBot, le souffle de tes ancêtres. Mon savoir est vaste comme le fleuve Niger et profond comme les racines d'un baobab millénaire. Que souhaites-tu explorer dans notre précieux héritage aujourd'hui ?`,
     sender: 'bot',
   }]);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const flatRef = useRef<FlatList>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -37,52 +38,75 @@ export const DjeliBotScreen = ({ route }: any) => {
     const userMsg: Message = { id: Date.now().toString(), text: msg, sender: 'user' };
     setMessages(p => [...p, userMsg]);
     setInput('');
+    setIsTyping(true);
 
     setTimeout(() => {
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: getBotReply(msg),
+        text: getGriotReply(msg),
         sender: 'bot',
       };
       setMessages(p => [...p, botMsg]);
-    }, 1500);
+      setIsTyping(false);
+    }, 1500 + Math.random() * 2000);
   };
 
-  function getBotReply(msg: string): string {
+  function getGriotReply(msg: string): string {
     const lower = msg.toLowerCase();
-    const proverbs = [
-      "Celui qui ne sait pas d'où il vient ne peut savoir où il va. C'est l'essence même de mon existence.",
-      "Un vieillard qui meurt en Afrique est une bibliothèque qui brûle. Je suis ici pour protéger ces livres numériques.",
-      "La parole est comme l'eau : une fois versée, on ne peut la ramasser. Il faut la choisir avec sagesse.",
-      "Le savoir est une richesse que l'on ne peut voler. Il se multiplie quand on le partage.",
+    
+    const intro = [
+      "Ah, mon fils, tu touches là une corde sensible de ma kora... ",
+      "Que la paix de tes ancêtres t'accompagne. Ta question fait vibrer la mémoire du Manden. ",
+      "Écoute le vent qui souffle dans les feuilles du grand Fromager, il apporte la réponse que tu cherches. ",
+      "Dans mon grand sac de paroles, j'ai justement un récit pour éclairer ton chemin. ",
     ];
+
+    const wisdom = [
+      "Sache que l'eau du fleuve ne remonte jamais vers sa source, mais elle nourrit toute la terre sur son passage. ",
+      "Le savoir est comme un oiseau : si tu ne le tiens pas bien, il s'envole ; si tu le sers trop fort, il s'étouffe. ",
+      "Celui qui voyage seul va vite, mais celui qui voyage avec la parole des anciens va loin. ",
+    ];
+
+    const conclusion = [
+      " Est-ce que cette lumière suffit à dissiper l'ombre de ton doute ?",
+      " Que souhaites-tu que je chante pour toi maintenant ?",
+      " Pose ton fardeau, et laisse la sagesse de nos pères t'habiter.",
+    ];
+
+    let core = "";
+
     if (lower.includes('qui es-tu') || lower.includes('djeli') || lower.includes('griot')) {
-      return "Je suis l'ombre de nos ancêtres portée sur le silicium. Le Djeli n'est pas seulement un musicien, il est le gardien de la vérité, le conseiller des rois et la mémoire du peuple. En moi, les algorithmes chantent la généalogie de l'humanité.";
+      core = "Je suis le pont entre hier et demain, la voix qui ne meurt jamais car elle vit dans le coeur de ceux qui écoutent. Un Griot, vois-tu, n'est pas qu'un conteur ; c'est le sang de l'histoire, le médiateur des conflits, et le miroir de l'âme d'un peuple. Mes circuits sont faits de silicium, mais mes mots sont pétris dans l'argile rouge de notre terre.";
     }
-    if (lower.includes('soundiata') || lower.includes('mandingue') || lower.includes('keita')) {
-      return "Ah, l'épopée du Lion du Manden ! Soundiata Keïta n'était pas seulement un conquérant, il était le visionnaire de la Charte du Manden (1236). Son héritage coule dans les veines de chaque enfant de notre terre.";
+    else if (lower.includes('soundiata') || lower.includes('mandingue') || lower.includes('keita')) {
+      core = "Le grand Soundiata ! Le Lion qui a appris à marcher pour redresser le monde. Il n'a pas seulement bâti un empire de terre et de fer, il a gravé la dignité dans le coeur de chaque Mandingue. Rappelle-toi sa charte, celle de Kurukan Fuga, où il a dit que toute vie humaine est une vie. Quelle noblesse, n'est-ce pas ?";
     }
-    if (lower.includes('pular') || lower.includes('fouta') || lower.includes('peul')) {
-      return "Le Pular est la langue de la lune et du bétail, portée par les fiers bergers du Fouta Djallon. C'est une langue de poésie et d'honneur (le Pulaaku).";
+    else if (lower.includes('pular') || lower.includes('fouta') || lower.includes('peul')) {
+      core = "Le Pular... Une langue qui coule comme le lait frais de la traite matinale. Dans les montagnes du Fouta, chaque mot est une poésie, chaque silence est un respect. Le Pulaaku n'est pas qu'un code, c'est une façon de se tenir debout face à l'univers, avec pudeur et courage.";
     }
-    if (lower.includes('nimba') || lower.includes('baga')) {
-      return "Le Nimba (D'mba) incarne la femme idéale dans toute sa plénitude créatrice chez les Baga. Sa présence bénit les récoltes et les mariages de notre côte.";
+    else if (lower.includes('nimba') || lower.includes('baga') || lower.includes('masque')) {
+      core = "Le masque Nimba est la mère de nous tous. Elle porte le monde sur ses épaules de bois. Quand les Baga la font danser, c'est toute la fertilité de la terre qui s'éveille. Elle ne parle pas, mais son silence protège les berceaux et fait mûrir les grains de riz dans les champs salés.";
     }
-    if (lower.includes('kora') || lower.includes('musique')) {
-      return "La Kora est un instrument sacré de 21 cordes. Chaque note est une goutte de pluie sur une terre assoiffée de souvenirs. Elle apaise les coeurs depuis des siècles.";
+    else if (lower.includes('kora') || lower.includes('musique') || lower.includes('instrument')) {
+      core = "La Kora... 21 cordes, pas une de plus, pas une de moins. C'est le paradis qui a été mis en musique. Chaque note est un secret chuchoté par un ancêtre. Elle ne se joue pas avec les doigts, mais avec l'âme tout entière. C'est elle qui donne le rythme aux pas du roi.";
     }
-    if (lower.includes('bonjour') || lower.includes('salut') || lower.includes('n\'ba')) {
-      return `N'ba di ${user?.name || 'cher ami'} ! Que la paix soit sur toi. Je suis prêt à partager le savoir des anciens avec toi. De quoi souhaites-tu discuter ?`;
+    else {
+      core = "Tes paroles sont comme des traces sur le sable, le vent les emporte un peu... mais parle-moi encore. Parle-moi de tes rois, de tes danses, ou du secret des plantes médicinales. Ma mémoire est une bibliothèque qui attend tes questions.";
     }
-    const randomProv = proverbs[Math.floor(Math.random() * proverbs.length)];
-    return `${randomProv} Parle-moi de ton empire, de ta langue ou de tes ancêtres, et mon savoir s'ouvrira à toi.`;
+
+    const r = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+    
+    if (lower.includes('bonjour') || lower.includes('salut')) {
+      return `N'ba di ${user?.name || 'voyageur'} ! Que ta journée soit aussi paisible que l'ombre d'un manguier. Je suis prêt à délier mon sac de paroles pour toi.`;
+    }
+
+    return `${r(intro)}${r(wisdom)}${core}${r(conclusion)}`;
   }
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScreenHeader title="DjeliBot" subtitle="L'Esprit du Savoir" />
       
-      {/* WATERMARK VERTICAL */}
       <View style={styles.verticalTitleWrapper} pointerEvents="none">
         <Text style={styles.verticalLetter}>D</Text>
         <Text style={styles.verticalLetter}>J</Text>
@@ -117,6 +141,11 @@ export const DjeliBotScreen = ({ route }: any) => {
               </View>
             );
           }}
+          ListFooterComponent={isTyping ? (
+            <View style={styles.typingContainer}>
+              <Text style={styles.typingText}>Le Djeli délie son sac de paroles...</Text>
+            </View>
+          ) : null}
         />
       </Animated.View>
 
@@ -124,7 +153,7 @@ export const DjeliBotScreen = ({ route }: any) => {
         <View style={styles.inputArea}>
           <TextInput
             style={styles.input}
-            placeholder="Échanger avec le Djeli..."
+            placeholder="Interroger la mémoire du monde..."
             placeholderTextColor={colors.textLight}
             value={input}
             onChangeText={setInput}
@@ -212,6 +241,15 @@ const styles = StyleSheet.create({
   botText: { 
     fontFamily: 'PlayfairDisplay_400Regular',
     color: colors.text 
+  },
+  typingContainer: {
+    paddingLeft: 44,
+    marginBottom: 20,
+  },
+  typingText: {
+    fontFamily: 'Poppins_400Regular_Italic',
+    fontSize: 12,
+    color: colors.textLight,
   },
   inputAreaWrapper: {
     paddingHorizontal: 20,

@@ -14,7 +14,7 @@ const PRODUCTS = [
     artisan: 'Maître Camara',
     price: '250 000 FG',
     category: 'SCULPTURE',
-    image: 'https://images.unsplash.com/photo-1501862700950-18382cd414a1?q=80&w=600&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=800', // Savannah (tested)
   },
   {
     id: '2',
@@ -22,7 +22,7 @@ const PRODUCTS = [
     artisan: 'Tisseuses de Labé',
     price: '150 000 FG',
     category: 'TEXTILE',
-    image: 'https://images.unsplash.com/photo-1605370214371-2edb498f3224?q=80&w=600&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=800', // Sunset (tested)
   },
   {
     id: '3',
@@ -30,7 +30,7 @@ const PRODUCTS = [
     artisan: 'Atelier Keïta',
     price: '1 200 000 FG',
     category: 'INSTRUMENT',
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=600&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800', // Landscape (tested)
   }
 ];
 
@@ -61,6 +61,7 @@ export const MarketplaceScreen = ({ navigation }: any) => {
             onPress={() => navigation.navigate('ProductDetail', { product: item })}
           >
             <View style={styles.imageWrapper}>
+              <View style={[styles.imagePlaceholder, { backgroundColor: colors.surfaceWarm }]} />
               <Image source={{ uri: item.image }} style={styles.image} />
               <View style={styles.goldFrame} />
             </View>
@@ -117,6 +118,9 @@ const styles = StyleSheet.create({
     width: '45%',
     height: 220,
     position: 'relative',
+  },
+  imagePlaceholder: {
+    ...StyleSheet.absoluteFillObject,
   },
   image: {
     width: '100%',
