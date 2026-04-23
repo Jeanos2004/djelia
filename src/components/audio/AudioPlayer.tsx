@@ -1,31 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Audio } from 'expo-av';
 import Svg, { Rect } from 'react-native-svg';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../config/colors';
 
-type Props = { audioUrl?: string };
+const { width } = Dimensions.get('window');
 
-const WAVE_HEIGHTS = [6, 10, 16, 12, 20, 14, 22, 18, 26, 20, 18, 24, 16, 20, 14, 18, 12, 16, 10, 8];
+type Props = { audioUrl?: any };
 
-const Waveform = ({ progress }: { progress: number }) => {
+const WAVE_HEIGHTS = [4, 8, 12, 10, 15, 12, 18, 14, 20, 16, 14, 18, 12, 16, 12, 14, 10, 12, 8, 6, 10, 16, 8, 12, 6];
+
+const Waveform = ({ progress, onSeek }: { progress: number; onSeek: (p: number) => void }) => {
   const activeCount = Math.floor(progress * WAVE_HEIGHTS.length);
+  const containerWidth = WAVE_HEIGHTS.length * 8;
+  
   return (
-    <Svg width={WAVE_HEIGHTS.length * 10} height="28" viewBox={`0 0 ${WAVE_HEIGHTS.length * 10} 28`}>
-      {WAVE_HEIGHTS.map((h, i) => (
-        <Rect
-          key={i}
-          x={i * 10 + 2}
-          y={(28 - h) / 2}
-          width="4"
-          height={h}
-          rx="2"
-          fill={i <= activeCount ? colors.gold : colors.textLight}
-          opacity={i <= activeCount ? 1 : 0.3}
-        />
-      ))}
-    </Svg>
+    <TouchableOpacity 
+      activeOpacity={1} 
+      onPress={(e) => {
+        const x = e.nativeEvent.locationX;
+        onSeek(x / containerWidth);
+      }}
+    >
+      <Svg width={containerWidth} height="20" viewBox={`0 0 ${containerWidth} 20`}>
+        {WAVE_HEIGHTS.map((h, i) => (
+          <Rect
+            key={i}
+            x={i * 8 + 1}
+            y={(20 - h) / 2}
+            width="3"
+            height={h}
+            rx="1.5"
+            fill={i <= activeCount ? colors.gold : colors.white}
+            opacity={i <= activeCount ? 1 : 0.15}
+          />
+        ))}
+      </Svg>
+    </TouchableOpacity>
   );
 };
 
@@ -33,6 +46,8 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [rate, setRate] = useState(1.0);
 
   useEffect(() => {
     return sound ? () => { sound.unloadAsync(); } : undefined;
@@ -41,13 +56,19 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
   const onStatus = (status: any) => {
     if (status.isLoaded) {
       setProgress((status.positionMillis || 0) / (status.durationMillis || 1));
+      setDuration(status.durationMillis || 0);
       if (status.didJustFinish) { setIsPlaying(false); setProgress(0); }
     }
   };
 
   const handlePlayPause = async () => {
     if (!sound) {
-      const { sound: s } = await Audio.Sound.createAsync({ uri: audioUrl! }, { shouldPlay: true }, onStatus);
+      const source = typeof audioUrl === 'string' ? { uri: audioUrl } : audioUrl;
+      const { sound: s } = await Audio.Sound.createAsync(
+        source, 
+        { shouldPlay: true, rate: rate, shouldCorrectPitch: true }, 
+        onStatus
+      );
       setSound(s);
       setIsPlaying(true);
       return;
@@ -56,21 +77,62 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
     else { await sound.playAsync(); setIsPlaying(true); }
   };
 
+  const seek = async (p: number) => {
+    if (sound) {
+      const pos = p * duration;
+      await sound.setPositionAsync(pos);
+    }
+  };
+
+  const skip = async (seconds: number) => {
+    if (sound) {
+      const status = await sound.getStatusAsync();
+      if (status.isLoaded) {
+        const newPos = Math.max(0, Math.min(duration, status.positionMillis + seconds * 1000));
+        await sound.setPositionAsync(newPos);
+      }
+    }
+  };
+
+  const cycleRate = async () => {
+    const nextRates = [1.0, 1.5, 2.0];
+    const next = nextRates[(nextRates.indexOf(rate) + 1) % nextRates.length];
+    setRate(next);
+    if (sound) { await sound.setRateAsync(next, true); }
+  };
+
   if (!audioUrl) return null;
 
   return (
     <View style={styles.container}>
       <View style={styles.inner}>
-        <TouchableOpacity style={styles.playBtn} onPress={handlePlayPause}>
-          <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶'}</Text>
-        </TouchableOpacity>
+        <View style={styles.leftGroup}>
+          <TouchableOpacity onPress={() => skip(-10)} style={styles.smallSkip}>
+            <MaterialCommunityIcons name="rewind-10" size={20} color={colors.white} opacity={0.6} />
+          </TouchableOpacity>
 
-        <View style={styles.waveArea}>
-          <Waveform progress={progress} />
-          <Text style={styles.label}>NARRATION DU GRIOT</Text>
+          <TouchableOpacity style={styles.playBtn} onPress={handlePlayPause}>
+            <MaterialCommunityIcons 
+              name={isPlaying ? "pause" : "play"} 
+              size={20} 
+              color={colors.indigo} 
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => skip(10)} style={styles.smallSkip}>
+            <MaterialCommunityIcons name="fast-forward-10" size={20} color={colors.white} opacity={0.6} />
+          </TouchableOpacity>
         </View>
+
+        <View style={styles.waveGroup}>
+          <Waveform progress={progress} onSeek={seek} />
+          <Text style={styles.metaText}>{isPlaying ? 'EN ÉCOUTE...' : 'PRÊT À ÉCOUTER'}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.rateChip} onPress={cycleRate}>
+          <Text style={styles.rateText}>{rate}x</Text>
+        </TouchableOpacity>
       </View>
-      <View style={styles.accentLine} />
     </View>
   );
 };
@@ -78,39 +140,62 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 0, left: 0, right: 0,
+    bottom: 20, left: 20, right: 20,
     backgroundColor: colors.indigo,
-    paddingBottom: 20,
+    borderRadius: 50,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
   },
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 30,
-    paddingVertical: 20,
-    gap: 20,
+    justifyContent: 'space-between',
+  },
+  leftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   playBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playIcon: { fontSize: 16, color: colors.white },
-  waveArea: { flex: 1 },
-  label: { 
-    fontFamily: 'Poppins_700Bold', 
-    fontSize: 9, 
-    color: colors.gold, 
-    letterSpacing: 2, 
-    marginTop: 8,
+  smallSkip: {
+    padding: 4,
+  },
+  waveGroup: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  metaText: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 7,
+    color: colors.gold,
+    letterSpacing: 1.5,
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  rateChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  rateText: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 9,
+    color: colors.white,
     opacity: 0.8,
   },
-  accentLine: {
-    height: 2,
-    width: '100%',
-    backgroundColor: colors.primary,
-    opacity: 0.3,
-  }
 });
