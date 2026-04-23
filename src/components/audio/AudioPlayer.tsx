@@ -12,13 +12,14 @@ type Props = { audioUrl?: any };
 
 const WAVE_HEIGHTS = [4, 8, 12, 10, 15, 12, 18, 14, 20, 16, 14, 18, 12, 16, 12, 14, 10, 12, 8, 6, 10, 16, 8, 12, 6];
 
-const Waveform = ({ progress, onSeek }: { progress: number; onSeek: (p: number) => void }) => {
+const Waveform = ({ progress, onSeek, disabled }: { progress: number; onSeek: (p: number) => void; disabled?: boolean }) => {
   const activeCount = Math.floor(progress * WAVE_HEIGHTS.length);
   const containerWidth = WAVE_HEIGHTS.length * 8;
   
   return (
     <TouchableOpacity 
       activeOpacity={1} 
+      disabled={disabled}
       onPress={(e) => {
         const x = e.nativeEvent.locationX;
         onSeek(x / containerWidth);
@@ -34,7 +35,7 @@ const Waveform = ({ progress, onSeek }: { progress: number; onSeek: (p: number) 
             height={h}
             rx="1.5"
             fill={i <= activeCount ? colors.gold : colors.white}
-            opacity={i <= activeCount ? 1 : 0.15}
+            opacity={disabled ? 0.1 : (i <= activeCount ? 1 : 0.15)}
           />
         ))}
       </Svg>
@@ -49,6 +50,8 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
   const [duration, setDuration] = useState(0);
   const [rate, setRate] = useState(1.0);
 
+  const hasAudio = !!audioUrl;
+
   useEffect(() => {
     return sound ? () => { sound.unloadAsync(); } : undefined;
   }, [sound]);
@@ -62,6 +65,7 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
   };
 
   const handlePlayPause = async () => {
+    if (!hasAudio) return;
     if (!sound) {
       const source = typeof audioUrl === 'string' ? { uri: audioUrl } : audioUrl;
       const { sound: s } = await Audio.Sound.createAsync(
@@ -78,14 +82,14 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
   };
 
   const seek = async (p: number) => {
-    if (sound) {
+    if (sound && hasAudio) {
       const pos = p * duration;
       await sound.setPositionAsync(pos);
     }
   };
 
   const skip = async (seconds: number) => {
-    if (sound) {
+    if (sound && hasAudio) {
       const status = await sound.getStatusAsync();
       if (status.isLoaded) {
         const newPos = Math.max(0, Math.min(duration, status.positionMillis + seconds * 1000));
@@ -95,41 +99,58 @@ export const AudioPlayer = ({ audioUrl }: Props) => {
   };
 
   const cycleRate = async () => {
+    if (!hasAudio) return;
     const nextRates = [1.0, 1.5, 2.0];
     const next = nextRates[(nextRates.indexOf(rate) + 1) % nextRates.length];
     setRate(next);
     if (sound) { await sound.setRateAsync(next, true); }
   };
 
-  if (!audioUrl) return null;
-
   return (
     <View style={styles.container}>
       <View style={styles.inner}>
         <View style={styles.leftGroup}>
-          <TouchableOpacity onPress={() => skip(-10)} style={styles.smallSkip}>
-            <MaterialCommunityIcons name="rewind-10" size={20} color={colors.white} opacity={0.6} />
+          <TouchableOpacity 
+            onPress={() => skip(-10)} 
+            style={styles.smallSkip}
+            disabled={!hasAudio}
+          >
+            <MaterialCommunityIcons name="rewind-10" size={20} color={colors.white} opacity={hasAudio ? 0.6 : 0.1} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.playBtn} onPress={handlePlayPause}>
+          <TouchableOpacity 
+            style={[styles.playBtn, !hasAudio && styles.disabledBtn]} 
+            onPress={handlePlayPause}
+            disabled={!hasAudio}
+          >
             <MaterialCommunityIcons 
               name={isPlaying ? "pause" : "play"} 
               size={20} 
-              color={colors.indigo} 
+              color={hasAudio ? colors.indigo : 'rgba(0,0,0,0.2)'} 
             />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => skip(10)} style={styles.smallSkip}>
-            <MaterialCommunityIcons name="fast-forward-10" size={20} color={colors.white} opacity={0.6} />
+          <TouchableOpacity 
+            onPress={() => skip(10)} 
+            style={styles.smallSkip}
+            disabled={!hasAudio}
+          >
+            <MaterialCommunityIcons name="fast-forward-10" size={20} color={colors.white} opacity={hasAudio ? 0.6 : 0.1} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.waveGroup}>
-          <Waveform progress={progress} onSeek={seek} />
-          <Text style={styles.metaText}>{isPlaying ? 'EN ÉCOUTE...' : 'PRÊT À ÉCOUTER'}</Text>
+          <Waveform progress={progress} onSeek={seek} disabled={!hasAudio} />
+          <Text style={[styles.metaText, !hasAudio && { color: colors.white, opacity: 0.3 }]}>
+            {hasAudio ? (isPlaying ? 'EN ÉCOUTE...' : 'PRÊT À ÉCOUTER') : 'NARRATION BIENTÔT DISPONIBLE'}
+          </Text>
         </View>
 
-        <TouchableOpacity style={styles.rateChip} onPress={cycleRate}>
+        <TouchableOpacity 
+          style={[styles.rateChip, !hasAudio && { opacity: 0.2 }]} 
+          onPress={cycleRate}
+          disabled={!hasAudio}
+        >
           <Text style={styles.rateText}>{rate}x</Text>
         </TouchableOpacity>
       </View>
@@ -169,6 +190,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  disabledBtn: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
   smallSkip: {
     padding: 4,
   },
@@ -181,9 +205,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
     fontSize: 7,
     color: colors.gold,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     marginTop: 4,
     opacity: 0.7,
+    textAlign: 'center',
   },
   rateChip: {
     paddingHorizontal: 8,

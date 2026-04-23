@@ -79,9 +79,7 @@ export const StoryDetailScreen = ({ route, navigation }: Props) => {
         </View>
       </ScrollView>
 
-      {story.audioUrl && (
-        <AudioPlayer audioUrl={story.audioUrl} />
-      )}
+      <AudioPlayer audioUrl={story.audioUrl} />
     </View>
   );
 };

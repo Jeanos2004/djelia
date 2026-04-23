@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, FlatList, Dimensions, Animated, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, Dimensions, Animated, TouchableOpacity, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { colors } from '../../config/colors';
 import { BogolanPattern, KoraIcon, TamTamIcon, HutIcon } from '../../components/common/AfricanPattern';
@@ -13,8 +13,9 @@ const slides = [
     subtitle: 'Gardiens de la Parole',
     description: 'Plongez dans les récits qui ont forgé notre identité. La voix des anciens n’est jamais perdue, elle attend d’être entendue.',
     Icon: KoraIcon,
-    accent: colors.primary,
+    accent: colors.gold,
     watermark: 'SAGESSE',
+    bg: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1000', // Hands on instrument
   },
   {
     id: '2',
@@ -22,8 +23,9 @@ const slides = [
     subtitle: 'Mémoire Augmentée',
     description: 'Le DjeliBot fusionne des siècles de tradition avec la puissance du numérique pour répondre à vos quêtes de savoir.',
     Icon: TamTamIcon,
-    accent: colors.accentRed,
+    accent: colors.gold,
     watermark: 'ESPRIT',
+    bg: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1000', // Confirmed Portrait
   },
   {
     id: '3',
@@ -33,32 +35,29 @@ const slides = [
     Icon: HutIcon,
     accent: colors.gold,
     watermark: 'RACINES',
+    bg: 'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=1000', // Confirmed Sunset
   },
 ];
 
-const AnimatedDecor = ({ scrollX }: { scrollX: Animated.Value }) => {
+const BackgroundManager = ({ scrollX }: { scrollX: Animated.Value }) => {
   return (
-    <View style={styles.decorContainer}>
-      {slides.map((_, i) => {
+    <View style={StyleSheet.absoluteFill}>
+      {slides.map((slide, i) => {
         const opacity = scrollX.interpolate({
-          inputRange: [(i - 0.5) * width, i * width, (i + 0.5) * width],
-          outputRange: [0, 0.05, 0],
+          inputRange: [(i - 1) * width, i * width, (i + 1) * width],
+          outputRange: [0, 1, 0],
           extrapolate: 'clamp',
         });
-        const translateX = scrollX.interpolate({
-          inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-          outputRange: [-100, 0, 100],
-        });
-
         return (
-          <Animated.View 
-            key={i} 
-            style={[styles.watermarkContainer, { opacity, transform: [{ translateX }] }]}
-          >
-            <Text style={styles.watermarkText}>{slides[i].watermark}</Text>
-          </Animated.View>
+          <Animated.Image
+            key={slide.id}
+            source={{ uri: slide.bg }}
+            style={[StyleSheet.absoluteFill, { opacity }]}
+            resizeMode="cover"
+          />
         );
       })}
+      <View style={styles.overlay} />
     </View>
   );
 };
@@ -80,10 +79,9 @@ export const OnboardingScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      <BogolanPattern opacity={0.03} />
+      <BackgroundManager scrollX={scrollX} />
+      <BogolanPattern opacity={0.1} color={colors.white} />
       
-      <AnimatedDecor scrollX={scrollX} />
-
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -108,13 +106,13 @@ export const OnboardingScreen = ({ navigation }: any) => {
           return (
             <View style={styles.slide}>
               <Animated.View style={[styles.iconWrapper, { opacity }]}>
-                <item.Icon size={120} color={item.accent} />
-                <View style={[styles.accentLine, { backgroundColor: item.accent }]} />
+                <item.Icon size={100} color={colors.gold} />
+                <View style={[styles.accentLine, { backgroundColor: colors.gold }]} />
               </Animated.View>
               
               <Animated.View style={[styles.contentWrapper, { opacity, transform: [{ translateY }] }]}>
                 <Text style={styles.subtitle}>{item.subtitle}</Text>
-                <Text style={[styles.title, { color: item.accent }]}>{item.title}</Text>
+                <Text style={styles.title}>{item.title}</Text>
                 <Text style={styles.description}>{item.description}</Text>
               </Animated.View>
             </View>
@@ -138,7 +136,7 @@ export const OnboardingScreen = ({ navigation }: any) => {
             return (
               <Animated.View 
                 key={i} 
-                style={[styles.dot, { transform: [{ scale }], opacity, backgroundColor: slides[i].accent }]} 
+                style={[styles.dot, { transform: [{ scale }], opacity, backgroundColor: colors.gold }]} 
               />
             );
           })}
@@ -146,7 +144,7 @@ export const OnboardingScreen = ({ navigation }: any) => {
 
         <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
           <Text style={styles.buttonText}>
-            {currentIndex === slides.length - 1 ? 'COMMENCER' : 'SUIVANT'}
+            {currentIndex === slides.length - 1 ? 'REJOINDRE LA COUR' : 'SUIVANT'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -157,7 +155,11 @@ export const OnboardingScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#000',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   slide: {
     width: width,
@@ -167,36 +169,39 @@ const styles = StyleSheet.create({
   },
   iconWrapper: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 40,
   },
   accentLine: {
-    width: 40,
-    height: 4,
-    marginTop: 20,
+    width: 30,
+    height: 2,
+    marginTop: 15,
   },
   contentWrapper: {
     alignItems: 'center',
   },
   subtitle: {
     fontFamily: 'Poppins_400Regular',
-    fontSize: 12,
-    color: colors.textLight,
+    fontSize: 10,
+    color: colors.gold,
     letterSpacing: 4,
     textTransform: 'uppercase',
     marginBottom: 10,
   },
   title: {
     fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 48,
+    fontSize: 42,
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 20,
+    color: colors.white,
+    letterSpacing: 2,
   },
   description: {
     fontFamily: 'Poppins_300Light',
-    fontSize: 16,
-    color: colors.textMid,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: 26,
+    paddingHorizontal: 20,
   },
   footer: {
     position: 'absolute',
@@ -211,37 +216,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 10,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 8,
   },
   nextBtn: {
     paddingVertical: 12,
     paddingHorizontal: 25,
-    backgroundColor: colors.indigo,
+    backgroundColor: colors.gold,
+    borderRadius: 30,
   },
   buttonText: {
-    color: colors.white,
-    fontFamily: 'Poppins_700Bold',
-    letterSpacing: 2,
-    fontSize: 12,
-  },
-  decorContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  watermarkContainer: {
-    position: 'absolute',
-    width: width,
-    alignItems: 'center',
-  },
-  watermarkText: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 120,
     color: colors.indigo,
-    opacity: 0.05,
-    letterSpacing: 10,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 1.5,
+    fontSize: 11,
   },
 });
