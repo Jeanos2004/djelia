@@ -24,7 +24,7 @@ Sa route fut longue, semée d'exils et de batailles. Contre le redoutable roi-so
 
 Aujourd'hui encore, sous les baobabs millénaires, les griots chantent le nom du fils de Maghan Kon Fatta, rappelant que la patience est le chemin de la royauté.`,
     imageUrl: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=800', // Savannah
-    audioUrl: require('../../assets/audio/soundiatastory.webm'),
+    audioUrl: require('../../assets/audio/soundiatastory.mp3'),
   },
   {
     id: '2',
